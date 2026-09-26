@@ -1,0 +1,6 @@
+numpy
+pillow
+scipy
+imageio-ffmpeg
+# only needed to regenerate worldmap.txt
+global-land-mask
