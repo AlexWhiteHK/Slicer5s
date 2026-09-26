@@ -6,7 +6,7 @@ import pathlib, subprocess, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 FF = sys.argv[1] if len(sys.argv) > 1 else 'ffmpeg'
-CRF = sys.argv[2] if len(sys.argv) > 2 else '20'   # segments are a CRF 16 intermediate; this is the delivery encode
+CRF = sys.argv[2] if len(sys.argv) > 2 else '22'   # segments are a CRF 16 intermediate; this is the delivery encode
 DIST = ROOT / 'dist'
 CHAPTERS = [(0, '序章 · Prologue'), (12, '十二年 · Twelve years'), (66, '转折 · The turn'),
             (78, 'Lotus Realistic V7'), (96, 'Lotus Anime Diffusion V7'), (111, '即将推出 · Coming soon')]
