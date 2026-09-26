@@ -14,9 +14,10 @@ import numpy as np
 from PIL import Image
 
 import gfx
-from gfx import W, H, seg, ease_io, ease_out, clamp01, BAYER
+from gfx import W, H, seg, ease_io, ease_out, BAYER
 import hud
-import scenes
+import battles
+import dungeon
 import ending
 import timeline as tl
 import pixfont as pf
@@ -51,86 +52,81 @@ def _stamp(dst, layer, alpha):
     dst.a[m] = layer.a[m]
 
 
-def draw_background(c, era, P, t):
-    if era == 'term':
-        hud.bg_term(c, P, t)
-    elif era == 'paper':
-        hud.bg_paper(c, P, t)
-    elif era == 'winter':
-        hud.bg_winter(c, P, t)
-    elif era == 'amber':
-        hud.bg_crt(c, P, t)
-    elif era == 'green':
-        hud.bg_crt(c, P, t, grid=True)
-    elif era == 'neon':
-        hud.bg_neon(c, P, t)
-    elif era == 'synth':
-        hud.bg_synth(c, P, t)
-    elif era == 'clean':
-        hud.bg_paper(c, P, t, clean=True)
-    elif era == 'dusk':
-        pass
-
-
 def render_era(era, t):
     P = hud.PAL[era]
     c = gfx.Canvas(P['bg'])
-    draw_background(c, era, P, t)
-
     if era == 'term':
+        hud.bg_term(c, P, t)
         ending.intro(c, P, t)
         return c
     if era == 'dusk':
         ending.yunagi(c, P, t)
         return c
 
-    # scene illustrations
-    in_era = []
-    for s in tl.SCENES:
-        eras = (s['era'], s.get('era2'))
-        if era not in eras:
-            continue
-        in_era.append(s)
+    # the dungeon floor for this era, with its encounters
+    world = gfx.Canvas(P['bg'])
+    active = [s for s in tl.SCENES if era in (s['era'], s.get('era2'))
+              and -0.001 <= t - s['t0'] <= s['t1'] - s['t0'] + 0.22]
+    floor = 'tiles'
+    for s in active:
+        if s['id'] in battles.FLOORS and t - s['t0'] >= 0:
+            floor = battles.FLOORS[s['id']]
+    dungeon.stage(world, era, P, t, floor=floor)
+    hero = dict(show=t >= tl.BIRTH_T)
+    primary = max([s for s in tl.SCENES if s['t0'] <= t], key=lambda s: s['t0'], default=None)
+    for s in active:
         u = t - s['t0']
         dur = s['t1'] - s['t0']
-        if u < 0 or u > dur + 0.22:
-            continue
         a = 1 - seg(u, dur - 0.04, dur + 0.2)
         lay = _layer()
-        fn = scenes.FUNCS[s['id']]
-        if s['id'] == 'imagenet':
-            fn(lay, P, u, s, era=era)
-        else:
-            fn(lay, P, u, s)
-        _stamp(c, lay, a)
+        ret = battles.FUNCS[s['id']](lay, P, u, s, era) or {}
+        _stamp(world, lay, a)
+        if s is primary:
+            hero.update(ret)
+    if hero.pop('show', True):
+        dungeon.draw_hero(world, P, era, t, **{k: v for k, v in hero.items() if k in ('dx', 'dy', 'pose')})
+    for w in tl.wins():
+        if w > tl.BIRTH_T:
+            dungeon.float_text(world, P, 'LV UP!', dungeon.HERO_X, dungeon.FLOOR_Y - 64, t, w, 0.8, P['acc'])
+    for (te, name) in tl.EVOLVE:
+        dungeon.float_text(world, P, 'EVOLVING...', dungeon.HERO_X, 66, t, te, tl.EVOLVE_DUR, P['hot'])
+        dungeon.float_text(world, P, name, dungeon.HERO_X, 66, t, te + tl.EVOLVE_DUR, 0.9, P['acc'])
 
     # HUD
+    in_era = [s for s in tl.SCENES if era in (s['era'], s.get('era2'))]
     hud_a = 1 - seg(t, tl.QUESTION_T0, tl.QUESTION_T0 + 0.3)
     head_a = seg(t, 3.9, 4.2) * hud_a
-    if hud_a > 0:
-        yv = hud.year_value(t)
-        hud.draw_ruler(c, P, t, yv if yv is not None else 1940, alpha=head_a)
-        if t < 4.3:
-            # the intro question travels to its header slot
-            f = ease_io(seg(t, 3.85, 4.25))
-            q = tl.INTRO_Q
-            x0 = 240 - pf.text_width(q, bold=True) * 2 // 2
-            x = x0 + (16 - x0) * f
-            y = 116 + (19 - 116) * f
-            if f < 0.6:
-                c.text(q, x, y, P['ink'], bold=True, scale=2)
-            else:
-                c.text(q, x, y, P['sub'])
+    hud.draw_panel(world, P, era, alpha=1.0)
+    yv = hud.year_value(t)
+    hud.draw_ruler(world, P, t, yv if yv is not None else 1940, alpha=head_a)
+    if t < 4.3:
+        # the intro question travels to its header slot
+        f = ease_io(seg(t, 3.85, 4.25))
+        q = tl.INTRO_Q
+        x0 = 240 - pf.text_width(q, bold=True) * 2 // 2
+        x = x0 + (16 - x0) * f
+        y = 116 + (19 - 116) * f
+        if f < 0.6:
+            world.text(q, x, y, P['ink'], bold=True, scale=2)
         else:
-            hud.draw_header(c, P, t, alpha=hud_a)
-        hud.draw_year(c, P, t, era, alpha=hud_a)
-        hud.draw_textlog(c, P, t, in_era, alpha=hud_a)
-        if t >= 4.0:
-            hud.draw_hotbar(c, P, t, era, alpha=seg(t, 4.0, 4.4) * hud_a)
-            hud.draw_skill_counter(c, P, t, alpha=seg(t, 4.0, 4.4) * hud_a)
-            hud.draw_unlock_popups(c, P, t, era)
-    if t >= tl.QUESTION_T0:
-        ending.question(c, P, t)
+            world.text(q, x, y, P['sub'])
+    else:
+        hud.draw_header(world, P, t)
+    hud.draw_year(world, P, t, era)
+    hud.draw_textlog(world, P, t, in_era)
+    if t >= 4.0:
+        hud.draw_stats(world, P, t, era)
+        hud.draw_hotbar(world, P, t, era, alpha=seg(t, 4.0, 4.4))
+        hud.draw_skill_counter(world, P, t, alpha=seg(t, 4.0, 4.4))
+        hud.draw_unlock_popups(world, P, t, era)
+    if hud_a >= 1:
+        return world
+    # the closing question takes over the screen
+    hud.bg_paper(c, P, t, clean=True)
+    ending.question(c, P, t)
+    lay = _layer()
+    lay.a[:] = world.a
+    _stamp(c, lay, hud_a)
     return c
 
 

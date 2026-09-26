@@ -43,63 +43,95 @@ SKILLS = ['LEARN', 'TALK', 'PLAY', 'READ', 'SEE', 'IMAGINE', 'INTUIT', 'ATTEND',
 SCENES = [
     dict(id='neuron', t0=4.0, t1=6.0, era='paper', year=1943,
          title='McCulloch & Pitts', sub=['a neuron, written as logic']),
-    dict(id='turing', t0=6.0, t1=8.0, era='paper', year=1950,
+    dict(id='turing', win=1.4, t0=6.0, t1=8.0, era='paper', year=1950,
          title='The Imitation Game', sub=['Alan Turing asks:', 'can machines think?']),
-    dict(id='dartmouth', t0=8.0, t1=10.0, era='paper', year=1956,
+    dict(id='dartmouth', win=1.55, t0=8.0, t1=10.0, era='paper', year=1956,
          title='Dartmouth Workshop', sub=['a new field gets its name']),
-    dict(id='perceptron', t0=10.0, t1=12.0, era='paper', year=1958,
+    dict(id='perceptron', win=1.35, t0=10.0, t1=12.0, era='paper', year=1958,
          title='The Perceptron', sub=['Rosenblatt: a machine', 'that learns from data'],
          skills=[(1.55, 'LEARN', 1)]),
-    dict(id='eliza', t0=12.0, t1=14.0, era='paper', year=1966,
+    dict(id='eliza', win=1.45, t0=12.0, t1=14.0, era='paper', year=1966,
          title='ELIZA', sub=['Weizenbaum, MIT', 'an early chatbot'],
          skills=[(1.45, 'TALK', 1)]),
     dict(id='winter', t0=14.0, t1=16.0, era='winter', year=1973,
          title='The first AI winter', sub=['Lighthill Report:', 'the funding freezes']),
-    dict(id='backprop', t0=16.0, t1=18.0, era='amber', year=1986,
+    dict(id='backprop', win=1.3, t0=16.0, t1=18.0, era='amber', year=1986,
          title='Backpropagation', sub=['Rumelhart, Hinton', '& Williams'],
          skills=[(1.62, 'LEARN', 2)]),
-    dict(id='deepblue', t0=18.0, t1=20.0, era='green', year=1997,
+    dict(id='deepblue', win=1.4, t0=18.0, t1=20.0, era='green', year=1997,
          title='Deep Blue', sub=['IBM machine beats world', 'champion Garry Kasparov'],
          skills=[(1.35, 'PLAY', 1)]),
-    dict(id='lenet', t0=20.0, t1=22.0, era='green', year=1998,
+    dict(id='lenet', win=1.3, t0=20.0, t1=22.0, era='green', year=1998,
          title='LeNet', sub=['Yann LeCun: a network', 'reads handwriting'],
          skills=[(1.5, 'READ', 1)]),
     dict(id='imagenet', t0=22.0, t1=23.3, era='green', year=2009,
          title='ImageNet', sub=['millions of labeled', 'images'], era2='neon'),
-    dict(id='alexnet', t0=23.3, t1=25.0, era='neon', year=2012,
+    dict(id='alexnet', win=1.3, t0=23.3, t1=25.0, era='neon', year=2012,
          title='AlexNet', sub=['top-5 error 15.3%,', 'deep learning ignites'],
          skills=[(1.2, 'SEE', 1)]),
-    dict(id='gan', t0=25.0, t1=27.0, era='neon', year=2014,
+    dict(id='gan', win=1.45, t0=25.0, t1=27.0, era='neon', year=2014,
          title='GANs', sub=['two networks duel:', 'one learns to create'],
          skills=[(1.55, 'IMAGINE', 1)]),
-    dict(id='alphago', t0=27.0, t1=29.0, era='neon', year=2016,
+    dict(id='alphago', win=1.35, t0=27.0, t1=29.0, era='neon', year=2016,
          title='AlphaGo', sub=['beats Lee Sedol 4-1', 'with Move 37'],
          skills=[(1.5, 'INTUIT', 1)]),
-    dict(id='transformer', t0=29.0, t1=31.0, era='neon', year=2017,
+    dict(id='transformer', win=1.4, t0=29.0, t1=31.0, era='neon', year=2017,
          title='Attention Is All You Need', sub=['the Transformer'],
          skills=[(1.35, 'ATTEND', 1)]),
-    dict(id='gpt3', t0=31.0, t1=32.5, era='synth', year=2020,
+    dict(id='gpt3', win=1.0, t0=31.0, t1=32.5, era='synth', year=2020,
          title='GPT-3', sub=['175 billion parameters'],
          skills=[(0.95, 'WRITE', 1)]),
-    dict(id='alphafold', t0=32.5, t1=34.0, era='synth', year=2020,
+    dict(id='alphafold', win=1.1, t0=32.5, t1=34.0, era='synth', year=2020,
          title='AlphaFold 2', sub=['predicts how proteins', 'fold'],
          skills=[(1.05, 'FOLD', 1)]),
-    dict(id='chatgpt', t0=34.0, t1=36.0, era='synth', year=2022,
+    dict(id='chatgpt', win=0.8, t0=34.0, t1=36.0, era='synth', year=2022,
          title='ChatGPT', sub=['AI goes mainstream:', '100M users in 2 months'],
          skills=[(0.75, 'CHAT', 1)]),
-    dict(id='diffusion', t0=36.0, t1=38.0, era='synth', year=2022,
+    dict(id='diffusion', win=1.5, t0=36.0, t1=38.0, era='synth', year=2022,
          title='Diffusion models', sub=['DALL·E 2 & Stable', 'Diffusion: text to image'],
          skills=[(1.55, 'DRAW', 1)]),
-    dict(id='frontier', t0=38.0, t1=39.4, era='synth', year=2023,
+    dict(id='frontier', win=1.2, t0=38.0, t1=39.4, era='synth', year=2023,
          title='GPT-4, Claude & Llama', sub=['the frontier race begins']),
-    dict(id='reasoning', t0=39.4, t1=41.0, era='synth', year=2024,
+    dict(id='reasoning', win=1.3, t0=39.4, t1=41.0, era='synth', year=2024,
          title='Reasoning models', sub=['think before answering', '+ two Nobel Prizes'],
          skills=[(1.25, 'REASON', 1)]),
-    dict(id='agents', t0=41.0, t1=45.0, era='clean', year=2025,
+    dict(id='agents', win=3.2, t0=41.0, t1=45.0, era='clean', year=2025,
          title='AI agents', sub=['that reason, write code', 'and act on computers'],
          years=[(2.0, 2026)],
          skills=[(1.25, 'CODE', 1), (2.55, 'ACT', 1)]),
 ]
+
+# ------------------------------------------------------------------ the hero
+BIRTH_T = 5.2                      # the neuron hatches: LV 1
+EVOLVE = [(11.42, 'PERCEPTRON'), (17.36, 'NEURAL KNIGHT'), (23.72, 'DEEP SEER'),
+          (29.18, 'TRANSFORMER DRAKE'), (31.45, 'FOUNDATION TITAN'), (41.12, 'AGENT')]
+EVOLVE_DUR = 0.6
+# hit points (keys are linearly interpolated); a level-up restores HP
+HP_KEYS = [(0, 1), (7.0, 1), (7.08, 0.86), (7.4, 0.86), (7.7, 1), (14.45, 1), (15.35, 0.04),
+           (16.15, 0.04), (16.8, 1), (18.9, 1), (18.98, 0.8), (19.4, 0.8), (19.7, 1),
+           (27.5, 1), (27.58, 0.86), (28.35, 0.86), (28.65, 1)]
+WALK = 0.32                        # the hero walks at the start of each scene
+
+
+def wins():
+    out = [BIRTH_T]
+    for s in SCENES:
+        if s.get('win') is not None:
+            out.append(s['t0'] + s['win'])
+    return sorted(out)
+
+
+def level(t):
+    return sum(1 for w in wins() if w <= t)
+
+
+def form(t):
+    f = 'SPARK'
+    for (te, name) in EVOLVE:
+        if t >= te + EVOLVE_DUR * 0.5:
+            f = name
+    return f
+
 
 QUESTION_T0 = 45.0
 YUNAGI_T0 = 47.95
@@ -159,13 +191,15 @@ INTRO_SUB = 'a short history, in pixels'
 INTRO_SUB_T = 2.35
 INTRO_SUB_CPS = 34.0
 
-Q_LINE1_T = 45.35
-Q_LINE1_CPS = 24.0
-Q_ICONS_T = 46.0
-Q_ICON_STEP = 0.062
+Q_LINE1_T = 45.3
+Q_LINE1_CPS = 26.0
+Q_FORMS_T = 45.75
+Q_FORM_STEP = 0.085
+Q_ICONS_T = 46.4
+Q_ICON_STEP = 0.032
 Q_LINE2 = 'What will you build with it?'
 Q_LINE2_T = 47.0
 Q_LINE2_CPS = 40.0
 
-CARD_TIMES = [50.05, 50.5, 50.95]
+CARD_TIMES = [49.85, 50.55, 51.25]
 MAP_T = 52.85

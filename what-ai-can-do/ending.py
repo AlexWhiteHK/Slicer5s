@@ -1,14 +1,13 @@
-"""Intro terminal, the closing question and the Yunagi.Cloud sequence."""
+"""Intro terminal, the closing question and the Lotus AI Lab / Yunagi.Cloud ending."""
 import math
 import os
 import numpy as np
 
-import gfx
-from gfx import W, H, hexc, seg, ease_out, ease_in, ease_io, ease_back, clamp01, mix
+from gfx import W, H, hexc, seg, ease_out, ease_io, ease_back, clamp01
 import pixfont as pf
 import timeline as tl
 import hud
-import scenes
+import sprites as S
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -34,44 +33,56 @@ def intro(c, P, t):
 
 
 # ------------------------------------------------------------------ question
+SHORT = {'SPARK': 'SPARK', 'PERCEPTRON': 'PERCEPTRON', 'NEURAL KNIGHT': 'KNIGHT',
+         'DEEP SEER': 'SEER', 'TRANSFORMER DRAKE': 'DRAKE', 'FOUNDATION TITAN': 'TITAN',
+         'AGENT': 'AGENT'}
+FORM_POP = [tl.Q_FORMS_T + i * tl.Q_FORM_STEP for i in range(len(S.FORMS))]
+ICON_POP = [tl.Q_ICONS_T + i * tl.Q_ICON_STEP for i in range(len(tl.SKILLS))]
+
+
 def q_layout(i):
     n = len(tl.SKILLS)
-    pitch = 28
-    x0 = 240 - (n * pitch - 2) // 2
-    return x0 + i * pitch, 108
+    x0 = 240 - (n * 14 - 1) // 2
+    return x0 + i * 14, 138
 
 
 def question(c, P, t):
-    u = t - tl.QUESTION_T0
-    # line 1
     q = tl.INTRO_Q
-    n = int((t - tl.Q_LINE1_T) * tl.Q_LINE1_CPS)
-    n = max(0, min(len(q), n))
+    n = max(0, min(len(q), int((t - tl.Q_LINE1_T) * tl.Q_LINE1_CPS)))
     x = 240 - pf.text_width(q, bold=True) * 2 // 2
-    c.text(q, x, 72, P['ink'], bold=True, scale=2, n=n)
-    if n < len(q) and n > 0:
-        c.rect(x + pf.text_width(q[:n], bold=True) * 2 + 3, 72, 9, 14, P['acc'])
-    # icons row
-    pops = [tl.Q_ICONS_T + i * tl.Q_ICON_STEP for i in range(len(tl.SKILLS))]
-    if t >= tl.Q_ICONS_T - 0.3:
-        hud.draw_hotbar(c, P, t, 'clean', layout=q_layout, scale=2, pop_times=pops)
-        for i, name in enumerate(tl.SKILLS):
-            if t >= pops[i] + 0.05:
-                x, y = q_layout(i)
-                c.tiny(name, x + 13, y + 31, P['sub'], align='center',
-                       alpha=seg(t, pops[i], pops[i] + 0.1))
-    last = pops[-1] + 0.15
+    c.text(q, x, 40, P['ink'], bold=True, scale=2, n=n)
+    if 0 < n < len(q):
+        c.rect(x + pf.text_width(q[:n], bold=True) * 2 + 3, 40, 9, 14, P['acc'])
+    # the evolution line, left to right
+    slot = 64
+    x0 = 240 - slot * 3
+    for i, name in enumerate(S.FORMS):
+        f = seg(t, FORM_POP[i], FORM_POP[i] + 0.12)
+        if f <= 0:
+            continue
+        cx = x0 + i * slot
+        hop = int(-6 * math.sin(math.pi * f)) if f < 1 else 0
+        if f < 1:
+            S.draw_sprite(c, S.HERO[name], cx, 112 + hop, None, 2, silhouette=P['acc'])
+        else:
+            S.draw_sprite(c, S.HERO[name], cx, 112, S.role_colors(P, 'neon', S.SCHEME[name]), 2)
+        c.tiny(SHORT[name], cx, 117, P['sub'], align='center')
+        if i:
+            c.text('→', cx - slot // 2 - 3, 94, P['dim'])
+    # every skill, in one row
+    if t >= tl.Q_ICONS_T - 0.05:
+        hud.draw_hotbar(c, P, t, 'clean', layout=q_layout, scale=1, pop_times=ICON_POP)
+    last = ICON_POP[-1] + 0.1
     if t > last:
-        f = seg(t, last, last + 0.25)
-        c.tiny('ALL %d SKILLS UNLOCKED' % len(tl.SKILLS), 240, 150, P['acc'], align='center', alpha=f)
-    # line 2
+        c.tiny('LV %d · %d SKILLS · 7 FORMS' % (tl.level(t), len(tl.SKILLS)), 240, 156, P['acc'],
+               align='center', alpha=seg(t, last, last + 0.2))
     k = int((t - tl.Q_LINE2_T) * tl.Q_LINE2_CPS)
     if k > 0:
         L2 = tl.Q_LINE2
         x2 = 240 - pf.text_width(L2) * 2 // 2
-        c.text(L2, x2, 176, P['acc'], scale=2, n=k)
+        c.text(L2, x2, 178, P['acc'], scale=2, n=k)
         if k < len(L2) or int(t * 2.5) % 2 == 0:
-            c.rect(x2 + pf.text_width(L2[:min(k, len(L2))]) * 2 + 3, 176, 9, 14, P['acc'])
+            c.rect(x2 + pf.text_width(L2[:min(k, len(L2))]) * 2 + 3, 178, 9, 14, P['acc'])
 
 
 # ------------------------------------------------------------------ dusk sea
@@ -158,11 +169,74 @@ def _panel(c, x, y, w, h, P, alpha=1.0):
     c.brackets(x - 1, y - 1, w + 2, h + 2, P['acc'], n=5, alpha=alpha)
 
 
-CARDS = [
-    ('雲', 'COMPUTE', 'VPS · VDS · Dedicated', 'from', '$4.20/mo'),
-    ('名', 'DOMAINS', '312 TLDs · SSL', '.com', '$10.20/yr'),
-    ('画', 'AI INFERENCE', 'Lotus Diffusion-1', 'per image', '$0.012'),
+CARDS = [   # Lotus AI Lab, served on Yunagi.Cloud
+    dict(tag='IMAGE', big='V7', name='Realistic V7', l1='photoreal on a DiT', l2='skin, light, material',
+         thumb='real'),
+    dict(tag='IMAGE', big='V7', name='Anime Diffusion V7', l1='stylised anime', l2='a higher floor',
+         thumb='anime'),
+    dict(tag='LANGUAGE', big='LM', name='OSIMM LM Series', l1='built on GLM & Kimi', l2='dialogue · coding',
+         thumb='osimm'),
 ]
+
+
+def _sphere(kind, n=40):
+    """The same sphere, lit two ways: photoreal (many dithered tones) and cel-shaded."""
+    img = np.zeros((n, n, 3), np.float32)
+    yy, xx = np.mgrid[0:n, 0:n] + 0.5
+    img[:] = hexc('#1a1422') if kind == 'real' else hexc('#f3e6f0')
+    fy = yy > n * 0.78
+    img[fy] = hexc('#2a2030') if kind == 'real' else hexc('#e0c8dc')
+    cx, cy, r = n / 2, n * 0.46, n * 0.34
+    dx, dy = (xx - cx) / r, (yy - cy) / r
+    inside = dx * dx + dy * dy <= 1
+    dz = np.sqrt(np.clip(1 - dx * dx - dy * dy, 0, 1))
+    L = np.array([-0.55, -0.6, 0.58])
+    L /= np.linalg.norm(L)
+    lam = np.clip(dx * L[0] + dy * L[1] + dz * L[2], 0, 1)
+    shadow = ((xx - cx - 3) / (r * 1.05)) ** 2 + ((yy - n * 0.82) / (r * 0.28)) ** 2 < 1
+    if kind == 'real':
+        img[shadow & ~inside] *= 0.45
+        base = hexc('#e2502e')
+        spec = np.clip(lam, 0, 1) ** 28
+        rim = np.clip(1 - dz, 0, 1) ** 3 * 0.35
+        col = base[None, None] * (0.12 + 0.88 * lam[..., None]) + 255 * spec[..., None] * 0.9
+        col += np.array([60, 80, 140]) * rim[..., None]
+        levels = 10
+        b = (np.arange(n)[:, None] % 4 * 4 + np.arange(n)[None, :] % 4 + 0.5) / 16
+        q = np.floor(col / 255 * levels + b[..., None] * 0.9) / levels * 255
+        img[inside] = np.clip(q, 0, 255)[inside]
+    else:
+        img[shadow & ~inside] = hexc('#c8a8c4')
+        tone = np.where(lam > 0.45, 1, 0)
+        img[inside & (tone == 1)] = hexc('#ff8aa8')
+        img[inside & (tone == 0)] = hexc('#c85078')
+        hl = ((xx - cx + r * 0.38) ** 2 / 9 + (yy - cy + r * 0.42) ** 2 / 5) < 1
+        img[inside & hl] = hexc('#ffffff')
+        edge = inside & ~(np.roll(inside, 1, 0) & np.roll(inside, -1, 0) & np.roll(inside, 1, 1) & np.roll(inside, -1, 1))
+        img[edge] = hexc('#3a1a2a')
+    return img
+
+
+THUMBS = {'real': _sphere('real'), 'anime': _sphere('anime')}
+
+
+def _thumb(c, kind, x, y, a):
+    if kind == 'osimm':
+        c.rect(x, y, 40, 40, hexc('#f5f1e8'), a)
+        red = hexc('#b1352a')
+        c.frame(x, y, 40, 40, red, a)
+        c.line(x, y, x + 39, y + 39, red, a * 0.6, dash=2)
+        c.line(x + 39, y, x, y + 39, red, a * 0.6, dash=2)
+        c.line(x + 20, y, x + 20, y + 39, red, a * 0.6, dash=2)
+        c.line(x, y + 20, x + 39, y + 20, red, a * 0.6, dash=2)
+        m = np.kron(pf.uni_mask('蓮'), np.ones((2, 2), bool))
+        c.put_mask(m, x + 4, y + 4, hexc('#1c1a16'), a)
+        c.rect(x + 31, y + 31, 7, 7, red, a)
+    else:
+        if a >= 1:
+            c.a[y:y + 40, x:x + 40] = THUMBS[kind]
+        c.frame(x - 1, y - 1, 42, 42, hexc('#4a4250'), a)
+
 
 _MAP = [l.rstrip('\n') for l in open(os.path.join(HERE, 'worldmap.txt')) if not l.startswith('#')]
 _MAP = np.array([[ch == '#' for ch in r] for r in _MAP], bool)
@@ -203,7 +277,7 @@ def network(c, P, t, alpha):
     u = t - tl.MAP_T
     a = alpha
     _panel(c, MAP_X - 10, MAP_Y - 16, 96 * MAP_P + 20, 32 * MAP_P + 30, P, a)
-    c.tiny('YUNAGI NETWORK · RING 4×100G · AS207214', MAP_X, MAP_Y - 11, P['sub'], a)
+    c.tiny('HOSTED API ON YUNAGI.CLOUD · GPU ROWS IN TOKYO & HONG KONG', MAP_X, MAP_Y - 11, P['sub'], a)
     rev = seg(u, 0.0, 0.5)
     ys, xs = np.nonzero(_MAP)
     order = (xs * 0.8 + ys * 0.2) / 96
@@ -250,61 +324,57 @@ def network(c, P, t, alpha):
         c.uni(KANJI[name], lx, y + ky, P['ink'], alpha=a * f)
         gpu = name in ('HND-1', 'HKG-1')
         c.tiny(name + (' GPU' if gpu else ''), lx, y + ky + 17, P['acc2'] if gpu else P['sub'], a * f)
-    st = seg(u, 1.2, 1.5)
-    stats = '6 metros · 99.9% SLA · 38s deploy · 312 TLDs'
+    stats = 'metered per request · L40S & H100 by the hour · open weights'
     c.text(stats, 240, MAP_Y + 32 * MAP_P + 2, P['ink'], align='center',
            n=int(seg(u, 1.2, 1.9) * len(stats)), alpha=a)
 
 
-def lotus_thumb(c, x, y, a=1.0):
-    img = scenes.LOTUS[::3, ::3]
-    if a >= 1:
-        c.a[y:y + 16, x:x + 16] = img
-    c.frame(x - 1, y - 1, 18, 18, hexc('#4a4250'), a)
-
-
 def yunagi(c, P, t):
     dusk(c, P, t)
-    # wordmark
-    k1 = seg(t, 48.45, 48.95)
+    # the hero rests on the shore
+    S.draw_sprite(c, S.HERO['AGENT'], 40, HORIZON + 4, S.role_colors(P, 'dusk', S.SCHEME['AGENT']), 2)
     fade_top = 1 - seg(t, tl.END_T0 - 0.25, tl.END_T0)
+    k1 = seg(t, 48.45, 48.95)
     if k1 > 0 and fade_top > 0:
-        m = pf.uni_mask('夕凪')
-        m = np.kron(m, np.ones((3, 3), bool))
+        m = np.kron(pf.uni_mask('蓮'), np.ones((3, 3), bool))
         cols = int(m.shape[1] * ease_io(k1))
-        c.put_mask(m[:, :cols], 22, 24, P['ink'], fade_top)
+        c.put_mask(m[:, :cols], 22, 22, P['ink'], fade_top)
     if t > 48.8:
         a = seg(t, 48.8, 49.0) * fade_top
-        c.text('Yunagi.Cloud', 128, 28, P['ink'], bold=True, scale=2,
-               n=int((t - 48.8) * 30), alpha=a)
-        c.tiny('YUNAGI · THE EVENING CALM · A HIGAN HOLDINGS COMPANY', 128, 47, P['sub'], alpha=a)
-        tag = 'Compute, names and inference from six metros.'
-        c.text(tag, 128, 57, P['ink'], n=int((t - 49.25) * 55), alpha=a)
+        c.text('Lotus AI Lab', 78, 26, P['ink'], bold=True, scale=2, n=int((t - 48.8) * 30), alpha=a)
+        c.tiny('A HIGAN HOLDINGS COMPANY · MODELS SERVED ON YUNAGI.CLOUD', 78, 45, P['sub'], alpha=a)
+        tag = 'Frontier models, with a higher floor.'
+        c.text(tag, 78, 55, P['ink'], n=int((t - 49.2) * 55), alpha=a)
     if t < tl.END_T0:
-        # cards
         card_out = seg(t, tl.MAP_T - 0.35, tl.MAP_T - 0.05)
-        for i, (kj, title, line, lab, price) in enumerate(CARDS):
+        if t > tl.CARD_TIMES[0] - 0.2 and card_out < 1:
+            c.tiny('ONE LOTUS, THREE MODELS', 20, 72, P['acc2'], alpha=(1 - card_out) * seg(t, tl.CARD_TIMES[0] - 0.2, tl.CARD_TIMES[0]))
+        for i, cd in enumerate(CARDS):
             ti = tl.CARD_TIMES[i]
             f = ease_out(seg(t, ti, ti + 0.25))
             if f <= 0 or card_out >= 1:
                 continue
             a = f * (1 - card_out)
             x = 20 + i * 148
-            y = 84 + int((1 - f) * 10) - int(card_out * 8)
-            w, h = 144, 72
+            y = 82 + int((1 - f) * 12) - int(card_out * 8)
+            w, h = 144, 92
             _panel(c, x, y, w, h, P, a)
-            c.rect(x + 7, y + 7, 20, 20, P['acc'], a)
-            c.uni(kj, x + 9, y + 9, P['ink'], alpha=a)
-            c.text(title, x + 33, y + 8, P['ink'], bold=True, alpha=a)
-            c.text(line, x + 33, y + 19, P['sub'], alpha=a, n=int((t - ti) * 60))
-            c.tiny(lab.upper(), x + 8, y + 38, P['dim'], alpha=a)
-            c.text(price, x + 8, y + 46, P['ink'], scale=2, alpha=a)
-            if i == 2 and a > 0:
-                lotus_thumb(c, x + w - 24, y + 40, a)
-            sweep = seg(t, ti + 0.1, ti + 0.45)
-            if 0 < sweep < 1:
-                sx = x + int(w * sweep)
-                c.rect(sx, y + 1, 2, h - 2, P['hot'], 0.5)
+            _thumb(c, cd['thumb'], x + 8, y + 8, a)
+            c.tiny(cd['tag'], x + 56, y + 10, P['sub'], a)
+            c.text(cd['big'], x + 56, y + 18, P['acc2'], bold=True, scale=2, alpha=a)
+            c.tiny('LEGENDARY', x + 56, y + 38, P['hot'], a)
+            c.text(cd['name'], x + 8, y + 55, P['ink'], bold=True, alpha=a)
+            c.text(cd['l1'], x + 8, y + 67, P['sub'], alpha=a, n=int((t - ti) * 70))
+            c.text(cd['l2'], x + 8, y + 77, P['sub'], alpha=a, n=int((t - ti - 0.15) * 70))
+            sp = seg(t, ti, ti + 0.45)
+            if 0 < sp < 1:
+                rng = np.random.default_rng(i)
+                for k in range(16):
+                    ang = rng.uniform(0, 6.28)
+                    r = 10 + 70 * sp * rng.uniform(0.5, 1)
+                    c.rect(x + w / 2 + r * math.cos(ang), y + h / 2 + r * math.sin(ang) * 0.6, 2, 2,
+                           P['hot'], 1 - sp)
+                c.rect(x + int(w * sp), y + 1, 2, h - 2, P['hot'], 0.5)
         if t >= tl.MAP_T - 0.1:
             na = seg(t, tl.MAP_T - 0.1, tl.MAP_T + 0.15) * (1 - seg(t, tl.END_T0 - 0.35, tl.END_T0 - 0.05))
             if na > 0:
@@ -313,24 +383,18 @@ def yunagi(c, P, t):
     e = seg(t, tl.END_T0, tl.END_T0 + 0.3)
     if e > 0:
         u = t - tl.END_T0
-        # vertical seal, 夕 over 凪
         sf = ease_back(seg(u, 0.0, 0.3))
         if sf > 0:
-            sw, sh = int(24 * sf), int(42 * sf)
-            c.rect(240 - sw // 2, 60 - sh // 2, sw, sh, P['acc'])
+            s_ = int(24 * sf)
+            c.rect(240 - s_ // 2, 60 - s_ // 2, s_, s_, P['acc'])
             if sf >= 0.95:
-                c.uni('夕', 232, 42, P['ink'])
-                c.uni('凪', 232, 60, P['ink'])
+                c.uni('蓮', 232, 52, P['ink'])
         big = 'Build on Yunagi.'
-        c.text(big, 240, 90, P['ink'], bold=True, scale=3, align='center',
+        c.text(big, 240, 86, P['ink'], bold=True, scale=3, align='center',
                n=int(seg(u, 0.2, 0.75) * len(big)))
-        c.text('yunagi.cloud', 240, 124, P['acc2'], bold=True, scale=2, align='center',
+        c.text('yunagi.cloud', 240, 120, P['acc2'], bold=True, scale=2, align='center',
                alpha=seg(u, 0.8, 1.0))
-        c.text('Cloud · Domains · AI Inference', 240, 146, P['sub'], align='center',
-               alpha=seg(u, 1.0, 1.2))
+        c.text('Lotus AI Lab: Realistic V7 · Anime Diffusion V7 · OSIMM LM', 240, 142, P['sub'],
+               align='center', alpha=seg(u, 1.0, 1.2))
         c.text('Design, animation, music & sound: written entirely in code.', 240, 226,
                P['dim'], align='center', alpha=seg(u, 1.4, 1.7))
-
-
-def seal(c, P, x, y, s=28):
-    c.rect(x, y, s, s, P['acc'])

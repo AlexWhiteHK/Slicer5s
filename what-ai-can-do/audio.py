@@ -658,45 +658,136 @@ def modern_drums(a, b, hats16=False, kick_pat=(0, 2), snare=(1, 3), vol=0.7):
 
 
 # ------------------------------------------------------------------ SFX from the timeline
+# ------------------------------------------------------------------ battle SFX
+def s_step(t, vol=0.08):
+    n = int(0.05 * SR)
+    s = lp(white(0.05), 700) * exp_env(n, 0.012) + sine(70, 0.05)[:n] * exp_env(n, 0.015) * 0.6
+    sfx.add(t, s, vol, -0.3)
+
+
+def s_hit(t, vol=0.25, crit=False):
+    n = int(0.18 * SR)
+    s = crush(white(0.18), 4, 6) * exp_env(n, 0.04) * 0.8
+    s += sine(160, 0.18, f_end=60)[:n] * exp_env(n, 0.05)
+    sfx.add(t, s, vol, 0.2)
+    if crit:
+        s_blip(t + 0.02, 96, 0.08, 0.12, 0.5, slide=84)
+        verb.add(t, s, vol * 0.3)
+
+
+def s_hurt(t, vol=0.14):
+    s = pulse(420, 0.22, 0.5, f_end=90) * env(int(0.22 * SR), 0.001, 0.2, 0.3, 0.03)
+    sfx.add(t, crush(s, 4, 4), vol, -0.3)
+
+
+def s_burst(t, vol=0.22, big=False):
+    d = 0.7 if big else 0.45
+    n = int(d * SR)
+    s = crush(white(d), 3, 10 if big else 6) * exp_env(n, d / 3.5)
+    s += sine(120, d, f_end=40)[:n] * exp_env(n, d / 4) * 0.7
+    sfx.add(t, s, vol, 0.25)
+    verb.add(t, s, vol * 0.25)
+    for k in range(4):
+        s_blip(t + 0.05 + k * 0.04, 84 - k * 5, 0.04, 0.05, 0.5, pan=0.4)
+
+
+def s_levelup(t):
+    for k, m in enumerate((72, 76, 79, 84)):
+        s_blip(t + k * 0.055, m, 0.07, 0.11, 0.125, pan=-0.3)
+
+
+def s_evolve(t0, dur):
+    """Pokemon-style evolution: two pitches alternating ever faster, then a chord."""
+    t = t0
+    k = 0
+    while t < t0 + dur:
+        f = (t - t0) / dur
+        per = 0.16 * (1 - f) + 0.03
+        s_blip(t, 79 + 12 * f + (5 if k % 2 else 0), 0.06, per * 0.9, 0.5, pan=0.0)
+        t += per
+        k += 1
+    for m in (72, 79, 84, 88, 91):
+        s_blip(t0 + dur, m, 0.05, 0.5, 0.25)
+        i_bell(verb, t0 + dur, m, 1.5, 0.05)
+    s_whoosh(t0, dur, 300, 8000, 0.08, rev=True)
+
+
+def s_roar(t, dur=0.6, vol=0.2):
+    n = int(dur * SR)
+    tt = np.arange(n) / SR
+    s = lp(white(dur), 500) * (0.6 + 0.4 * np.sin(tt * 60)) + saw(70, dur, f_end=45)[:n] * 0.5
+    s *= env(n, 0.05, dur, 0.6, 0.15)
+    sfx.add(t, crush(s, 5, 3), vol, 0.35)
+    verb.add(t, s, vol * 0.3)
+
+
+def s_shatter(t, vol=0.15):
+    for k in range(10):
+        s_blip(t + k * 0.012, 96 + rng.integers(-5, 8), 0.04, 0.05, 0.5, pan=rng.uniform(-0.5, 0.5))
+    sfx.add(t, hp(white(0.3), 5000) * exp_env(int(0.3 * SR), 0.08), vol)
+
+
+def s_heal(t, vol=0.06):
+    for k, m in enumerate((72, 79, 84, 88, 91, 96)):
+        s_blip(t + k * 0.05, m, vol, 0.08, 0.125, pan=-0.2)
+
+
+def s_boing(t, vol=0.07):
+    s_blip(t, 60, vol, 0.18, 0.5, slide=84)
+
+
+def s_laser(t, dur=0.22, vol=0.1):
+    s = pulse(1200, dur, 0.25, f_end=300) * env(int(dur * SR), 0.001, dur, 0.6, 0.02)
+    sfx.add(t, s, vol, 0.3)
+
+
+def s_fanfare(t, notes=(72, 76, 79, 84, 79, 84), step=0.08, vol=0.08):
+    for k, m in enumerate(notes):
+        s_blip(t + k * step, m, vol, step * 1.6 if k < len(notes) - 1 else 0.5, 0.25, pan=0.1)
+
+
 def sfx_from_timeline():
     # intro typing
-    q = tl.INTRO_Q
-    for k in range(len(q)):
+    for k in range(len(tl.INTRO_Q)):
         s_key(tl.INTRO_Q_T + k / tl.INTRO_Q_CPS, 0.3)
     for k in range(0, len(tl.INTRO_SUB), 2):
         s_click(tl.INTRO_SUB_T + k / tl.INTRO_SUB_CPS, 0.09)
     s_whoosh(3.7, 0.4, 800, 5000, 0.08)
 
-    # scene typing
-    for s in tl.SCENES:
-        for (li, ts, n, cps) in tl.text_events(s):
-            stepk = 1 if li == 0 else 2
-            for k in range(0, n, stepk):
-                if s['era'] in ('paper',):
-                    s_key(ts + k / cps, 0.05 if li == 0 else 0.03)
+    # log typing
+    for sc in tl.SCENES:
+        for (li, ts, n, cps) in tl.text_events(sc):
+            for k in range(0, n, 1 if li == 0 else 2):
+                if sc['era'] == 'paper':
+                    s_key(ts + k / cps, 0.04 if li == 0 else 0.025)
                 else:
-                    s_click(ts + k / cps, 0.045 if li == 0 else 0.025, pitch=1.0 + 0.2 * li)
-
-    # year odometer ticks
+                    s_click(ts + k / cps, 0.035 if li == 0 else 0.02, pitch=1.0 + 0.2 * li)
+    # year odometer
     for (te, a, b) in tl.year_events():
         steps = min(14, abs(b - a))
         for k in range(steps):
             f = (k + 1) / steps
-            # ease-out timing inverse: t = 1 - (1-f)^(1/3)
-            tt = te + tl.YEAR_ROLL * (1 - (1 - f) ** (1 / 3)) * 0.9
-            s_tick(tt, 0.06, 1.0 + 0.3 * f)
-
-    # unlocks
-    for i, (t, name, lvl) in enumerate(tl.unlock_events()):
+            s_tick(te + tl.YEAR_ROLL * (1 - (1 - f) ** (1 / 3)) * 0.9, 0.05, 1.0 + 0.3 * f)
+    # walking into each room
+    for sc in tl.SCENES[1:]:
+        for k in range(3):
+            s_step(sc['t0'] + 0.03 + k * 0.1)
+    # loot and levels
+    unlocks = tl.unlock_events()
+    for i, (t, name, lvl) in enumerate(unlocks):
         s_unlock(t, lvl, i)
         s_blip(t + 0.42, 96, 0.06, 0.05, 0.5, pan=0.5)
+    for w in tl.wins()[1:]:
+        if all(abs(w - t) > 0.3 for (t, _, _) in unlocks):
+            s_levelup(w)
+    for (te, name) in tl.EVOLVE:
+        s_evolve(te, tl.EVOLVE_DUR)
 
-    # transitions
+    # era transitions
     s_whoosh(13.85, 0.5, 4000, 400, 0.12)
     s_zap(15.9, 800, 60, 0.12, 0.12)
-    sfx.add(16.0, sine(15600, 0.5) * exp_env(int(0.5 * SR), 0.15), 0.015)
     s_thud(16.0, 0.4)
-    sfx.add(16.02, hp(white(0.08), 3000) * exp_env(int(0.08 * SR), 0.02), 0.2)
+    sfx.add(16.0, sine(15600, 0.5) * exp_env(int(0.5 * SR), 0.15), 0.015)
     s_glitch(17.95, 0.2)
     s_whoosh(22.8, 0.6, 400, 9000, 0.16)
     s_glitch(30.95, 0.16, 0.18)
@@ -704,127 +795,196 @@ def sfx_from_timeline():
     s_whoosh(40.85, 0.3, 2000, 9000, 0.12)
     s_thud(41.0, 0.3)
 
-    # 1943 neuron
-    for (tt, m) in ((4.75, 79), (4.83, 83)):
-        s_blip(tt, m, 0.06, 0.05)
-    s_zap(5.1, 400, 1800, 0.12, 0.1)
-    s_blip(5.55, 88, 0.1, 0.12, 0.5)
-    # 1950 messages
-    for tt in (6.6, 6.8, 7.05, 7.2):
-        s_blip(tt, 91 if tt < 7 else 86, 0.05, 0.04, 0.5, pan=0.3)
-    s_blip(7.4, 84, 0.1, 0.1, 0.25, slide=91)
-    # 1956 stamping
-    for (word, t0, step) in (('ARTIFICIAL', 8.15, 0.055), ('INTELLIGENCE', 8.62, 0.05)):
-        for k in range(len(word)):
-            s_key(t0 + step * k + 0.05, 0.12, pan=-0.3 + 0.06 * k)
-    s_whoosh(9.25, 0.3, 1000, 5000, 0.06)
-    # 1958 epochs
-    for k, tt in enumerate((10.55, 10.78, 10.98, 11.16, 11.34)):
-        s_blip(tt, 72 + k * 2, 0.07, 0.05, 0.25)
-    s_blip(11.44, 84, 0.08, 0.1, 0.5, slide=96)
-    # 1966 teletype chatter
-    starts = [12.3 + 0.28 * i for i in range(5)]
-    lens = [20, 12, 20, 18, 17]
-    for st, L in zip(starts, lens):
-        s_thud(st, 0.12)
-        for k in range(L):
-            s_click(st + k / 70, 0.03, pitch=0.7)
-    # 1973 funding meter
-    for k in range(10):
-        s_blip(14.35 + k * 0.1, 76 - k, 0.05, 0.07, 0.5, slide=70 - k)
-    # 1986 backprop
-    for k, tt in enumerate((16.35, 16.54, 16.73)):
-        s_blip(tt, 76 + k * 3, 0.05, 0.05, 0.25)
-    s_zap(16.95, 200, 180, 0.2, 0.08)
-    for k, tt in enumerate((17.1, 17.27, 17.44)):
-        s_zap(tt, 600 + 200 * k, 2400, 0.1, 0.06)
-    # 1997 chess
-    s_whoosh(18.75, 0.3, 600, 2000, 0.06)
-    s_stone(19.05, 0.35)
-    s_blip(19.1, 88, 0.08, 0.08, 0.5)
-    s_blip(19.2, 84, 0.08, 0.08, 0.5)
-    # 1998 scribble + scan
-    scrib = bp(white(0.55), 3000, 1.2) * (0.5 + 0.5 * np.sin(np.arange(int(0.55 * SR)) / SR * 60))
-    sfx.add(20.05, scrib, 0.04, -0.3)
-    for k in range(18):
-        s_blip(20.6 + k * 0.025, 84 + (k * 5) % 12, 0.025, 0.02, 0.5)
-    s_blip(21.45, 81, 0.09, 0.08, 0.25)
-    s_blip(21.53, 88, 0.09, 0.12, 0.25)
-    # 2009 tiles pouring
-    for k in range(40):
-        s_click(22.0 + k * 0.014, 0.025, pitch=1.5 + rng.random())
-    for tt in (22.35, 22.6, 22.85, 23.05):
-        s_blip(tt, 91, 0.04, 0.04, 0.5, pan=0.4)
-    # 2012 bars + GPUs
-    s_blip(23.75, 60, 0.05, 0.45, 0.5, slide=72)
-    s_blip(23.8, 55, 0.05, 0.5, 0.5, slide=79)
-    fan = bp(white(0.6), 400, 2) * 0.8
-    sfx.add(24.3, fan * env(len(fan), 0.1, 1, 1, 0.2), 0.05)
-    # 2014 GAN rounds
-    for k, r in enumerate((0.3, 0.55, 0.8, 1.05, 1.3)):
-        s_whoosh(25.0 + r - 0.18, 0.18, 800, 3000, 0.04, pan=-0.4)
-        if k < 4:
-            s_blip(25.0 + r + 0.02, 55, 0.05, 0.08, 0.5)
-        else:
-            s_chime(25.0 + r + 0.02, 88, 0.08)
-    # 2016 stones
-    for k in range(13):
-        s_stone(27.25 + 0.06 * k, 0.12, pan=rng.uniform(-0.5, 0.5))
-    s_stone(28.1, 0.35)
-    i_bell(verb, 28.1, 57, 2.5, 0.12)
-    i_bell(sfx, 28.1, 57, 2.5, 0.07)
-    # 2017 attention arcs
-    for k in range(10):
-        s_blip(29.45 + 0.06 * k, 72 + (k % 5) * 3, 0.03, 0.12, 0.25, slide=84 + (k % 5) * 3)
-    # 2020 gpt-3 counter + fold
-    for k in range(24):
-        s_click(31.1 + k * 0.03, 0.03, pitch=2.0)
-    s_blip(32.8, 60, 0.04, 0.75, 0.5, slide=84)
-    # 2022 bubbles + denoise
-    s_blip(34.55, 84, 0.06, 0.05, 0.5)
-    s_blip(34.95, 79, 0.06, 0.05, 0.5)
-    hiss = white(1.0)
-    hiss = hp(hiss, 3000) * np.linspace(1, 0, len(hiss)) ** 1.5
-    sfx.add(36.5, hiss, 0.05, 0.2)
-    s_chime(37.45, 91, 0.1)
-    # 2023 race
-    for k, (m0, m1) in enumerate(((60, 84), (57, 79), (55, 76))):
-        s_blip(38.1 + 0.02 * k, m0, 0.03, 1.1, 0.25, slide=m1, pan=(k - 1) * 0.5)
-    # 2024 reasoning
+    T = {sc['id']: sc['t0'] for sc in tl.SCENES}
+    # 1943: the neuron fires and hatches; the gate opens
+    t0 = T['neuron']
+    s_blip(t0 + 0.75, 79, 0.06, 0.05)
+    s_blip(t0 + 0.83, 83, 0.06, 0.05)
+    s_zap(t0 + 1.1, 400, 1800, 0.12, 0.1)
+    s_fanfare(t0 + 1.2, (72, 79, 84), 0.07, 0.07)
+    s_roar(t0 + 1.35, 0.5, 0.08)
+    # 1950: the mimic
+    t0 = T['turing']
+    for d in (0.3, 0.55):
+        s_blip(t0 + d, 84, 0.06, 0.2, 0.5, slide=91)
+    for k in range(6):
+        s_click(t0 + 0.5 + k * 0.07, 0.08, pitch=0.5)
+    s_roar(t0 + 0.95, 0.35, 0.16)
+    s_hurt(t0 + 1.05)
+    s_hit(t0 + 1.26)
+    s_burst(t0 + 1.34)
+    # 1956: naming the field
+    t0 = T['dartmouth']
+    for k in range(len('ARTIFICIAL INTELLIGENCE')):
+        s_blip(t0 + 0.15 + k * 0.05, 88 + (k % 3) * 2, 0.04, 0.03, 0.5, pan=0.3)
+    s_fanfare(t0 + 1.4, (79, 84, 91), 0.06, 0.07)
+    # 1958: the tangled swarm
+    t0 = T['perceptron']
     for k in range(8):
-        s_tick(39.45 + k * 0.1, 0.05, 0.8 if k % 2 else 1.1)
-    s_chime(40.45, 84, 0.08)
-    s_chime(40.55, 91, 0.08)
-    s_blip(40.65, 88, 0.08, 0.15, 0.25, slide=96)
-    # 2025-26 agents: keyboard + ticks + click
-    for k in range(60):
-        s_key(41.3 + k * 0.055 + rng.uniform(0, 0.015), 0.03, pan=-0.2)
-    for tt in (41.75, 42.45, 43.3, 44.05):
-        s_blip(tt, 88, 0.07, 0.06, 0.25)
-    s_click(43.25, 0.2, pitch=0.6)
-    s_chime(43.7, 88, 0.07)
-    s_whoosh(44.7, 0.3, 3000, 500, 0.06)
+        s_blip(t0 + 0.25 + k * 0.03, 60 + (k % 4) * 3, 0.03, 0.05, 0.5, slide=72)
+    for k, d in enumerate((0.55, 0.72, 0.88, 1.03, 1.18)):
+        s_blip(t0 + d, 72 + k * 2, 0.07, 0.05, 0.25)
+    s_laser(t0 + 1.22)
+    s_burst(t0 + 1.28)
+    # 1966: ELIZA's dialogue
+    t0 = T['eliza']
+    for i, (line, who) in enumerate((('HUMAN: Men are all alike.', 0), ('AI: IN WHAT WAY?', 1),
+                                     ("HUMAN: They're always bugging us.", 0),
+                                     ('AI: CAN YOU THINK OF A SPECIFIC EXAMPLE?', 1))):
+        st = t0 + 0.3 + 0.25 * i
+        for k in range(0, len(line), 2):
+            s_blip(st + k / 70, 79 if who else 67, 0.025, 0.02, 0.5, pan=0.3 if who else -0.2)
+    # 1973: the AI winter
+    t0 = T['winter']
+    s_roar(t0 + 0.05, 0.5, 0.2)
+    s_whoosh(t0 + 0.45, 0.4, 3000, 600, 0.14)
+    s_hurt(t0 + 0.55, 0.16)
+    s_shatter(t0 + 0.75, 0.08)
+    # 1986: thaw, miss, error flows back, critical hit
+    t0 = T['backprop']
+    s_shatter(t0 + 0.05)
+    s_heal(t0 + 0.2)
+    s_whoosh(t0 + 0.45, 0.25, 800, 3000, 0.06)
+    s_zap(t0 + 0.68, 200, 180, 0.2, 0.08)
+    for k in range(6):
+        s_blip(t0 + 0.72 + k * 0.045, 84 - k * 3, 0.04, 0.04, 0.5)
+    for k in range(3):
+        s_blip(t0 + 0.9 + k * 0.06, 76 + k * 3, 0.05, 0.05, 0.25)
+    s_hit(t0 + 1.1, 0.3, crit=True)
+    s_burst(t0 + 1.2)
+    # 1997: the chess king
+    t0 = T['deepblue']
+    for d in (0.42, 0.78, 1.06):
+        s_boing(t0 + d)
+    s_hit(t0 + 0.55)
+    s_hit(t0 + 0.9)
+    s_zap(t0 + 0.86, 300, 900, 0.18, 0.08)
+    s_hurt(t0 + 0.9)
+    s_fanfare(t0 + 1.1, (72, 79, 84, 88), 0.07, 0.09)
+    s_thud(t0 + 1.3, 0.35)
+    s_burst(t0 + 1.36, big=True)
+    # 1998: the scrawl wraith
+    t0 = T['lenet']
+    w = sine(440, 0.5, f_end=330) * (0.5 + 0.5 * np.sin(np.arange(int(0.5 * SR)) / SR * 40))
+    sfx.add(t0 + 0.02, w * env(len(w), 0.1, 0.5, 0.5, 0.1), 0.05, 0.3)
+    for k in range(18):
+        s_blip(t0 + 0.35 + k * 0.03, 84 + (k * 5) % 12, 0.025, 0.02, 0.5)
+    s_blip(t0 + 1.02, 81, 0.09, 0.08, 0.25)
+    s_blip(t0 + 1.1, 88, 0.09, 0.12, 0.25)
+    s_burst(t0 + 1.2)
+    # 2009: the image horde
+    t0 = T['imagenet']
+    for k in range(40):
+        s_click(t0 + k * 0.013, 0.03, pitch=1.5 + rng.random())
+    for d in (0.35, 0.55, 0.8, 1.0):
+        s_blip(t0 + d, 91, 0.04, 0.04, 0.5, pan=0.4)
+    s_blip(t0 + 0.45, 72, 0.08, 0.08, 0.5)
+    s_blip(t0 + 0.53, 67, 0.08, 0.12, 0.5)
+    # 2012: GPUs, evolution, the beam
+    t0 = T['alexnet']
+    s_thud(t0 + 0.28, 0.25)
+    s_thud(t0 + 0.36, 0.25)
+    s_heal(t0 + 0.3, 0.05)
+    s_laser(t0 + 0.98, 0.25, 0.14)
+    s_burst(t0 + 1.05, 0.28, big=True)
+    s_blip(t0 + 1.15, 60, 0.05, 0.3, 0.5, slide=72)
+    s_blip(t0 + 1.18, 55, 0.05, 0.3, 0.5, slide=79)
+    # 2014: the doppelganger
+    t0 = T['gan']
+    for k, r in enumerate((0.3, 0.55, 0.8, 1.05, 1.3)):
+        s_whoosh(t0 + r - 0.18, 0.18, 800, 3000, 0.04, pan=-0.4)
+        if k < 4:
+            s_blip(t0 + r + 0.02, 55, 0.05, 0.08, 0.5)
+        else:
+            s_chime(t0 + r + 0.02, 88, 0.08)
+    s_burst(t0 + 1.36)
+    # 2016: the go dragon
+    t0 = T['alphago']
+    s_roar(t0 + 0.05, 0.4, 0.12)
+    s_stone(t0 + 0.42, 0.2)
+    s_hurt(t0 + 0.55)
+    s_whoosh(t0 + 0.85, 0.23, 600, 3000, 0.06)
+    s_stone(t0 + 1.08, 0.4)
+    i_bell(verb, t0 + 1.08, 57, 2.5, 0.12)
+    i_bell(sfx, t0 + 1.08, 57, 2.5, 0.07)
+    for k in range(14):
+        s_stone(t0 + 1.2 + k * 0.03, 0.08, pan=rng.uniform(-0.5, 0.5))
+    # 2017: attention
+    t0 = T['transformer']
+    for k in range(10):
+        s_blip(t0 + 0.85 + 0.025 * k, 72 + (k % 5) * 3, 0.03, 0.12, 0.25, slide=84 + (k % 5) * 3)
+    s_burst(t0 + 1.32)
+    # 2020: parameters and the protein serpent
+    t0 = T['gpt3']
+    s_whoosh(t0, 1.0, 200, 6000, 0.08, rev=True)
+    for k in range(24):
+        s_click(t0 + 0.1 + k * 0.032, 0.03, pitch=2.0)
+    t0 = T['alphafold']
+    s_blip(t0 + 0.3, 60, 0.04, 0.7, 0.5, slide=84)
+    s_chime(t0 + 1.0, 88, 0.08)
+    s_burst(t0 + 1.2)
+    # 2022: the world joins; the noise beast is purified
+    t0 = T['chatgpt']
+    crowd = lp(white(0.9), 2500) * np.sin(np.linspace(0, math.pi, int(0.9 * SR)))
+    sfx.add(t0 + 0.2, crowd, 0.06, 0.1)
+    for k in range(10):
+        s_blip(t0 + 0.55 + k * 0.03, 88 + (k % 3) * 4, 0.03, 0.04, 0.5)
+    t0 = T['diffusion']
+    s_roar(t0 + 0.1, 0.35, 0.08)
+    for k in range(17):
+        s_key(t0 + 0.05 + k * 0.021, 0.04)
+    hiss = hp(white(1.0), 3000) * np.linspace(1, 0, int(1.0 * SR)) ** 1.5
+    sfx.add(t0 + 0.45, hiss, 0.05, 0.2)
+    s_chime(t0 + 1.42, 91, 0.1)
+    # 2023: rivals race past; 2024: the labyrinth
+    t0 = T['frontier']
+    for k in range(18):
+        s_step(t0 + k * 0.075, 0.05)
+    s_blip(t0 + 0.1, 76, 0.06, 0.08, 0.25)
+    s_blip(t0 + 0.18, 79, 0.06, 0.12, 0.25)
+    t0 = T['reasoning']
+    for k in range(8):
+        s_tick(t0 + 0.1 + k * 0.09, 0.05, 0.8 if k % 2 else 1.1)
+    s_blip(t0 + 0.82, 88, 0.08, 0.1, 0.25)
+    for k, m in enumerate((72, 76, 79, 84, 88)):
+        s_blip(t0 + 0.85 + k * 0.05, m, 0.05, 0.06, 0.25)
+    s_chime(t0 + 1.3, 84, 0.07)
+    s_chime(t0 + 1.38, 91, 0.07)
+    # 2025-26: the bug swarm
+    t0 = T['agents']
+    for k in range(50):
+        s_key(t0 + 0.35 + k * 0.06 + rng.uniform(0, 0.015), 0.025, pan=0.2)
+    for d in (0.75, 1.45, 2.3, 3.05):
+        s_blip(t0 + d, 88, 0.06, 0.06, 0.25)
+    for (ta, tz) in ((0.55, 0.95), (0.7, 1.2), (0.85, 1.5), (1.0, 1.8), (1.15, 2.1), (1.3, 2.4)):
+        s_laser(t0 + tz - 0.15, 0.12, 0.06)
+        s_burst(t0 + tz, 0.1)
+    s_click(t0 + 2.25, 0.2, pitch=0.6)
+    s_chime(t0 + 2.7, 88, 0.07)
+    s_fanfare(t0 + 3.2, (72, 76, 79, 84, 88, 91), 0.07, 0.09)
+    s_whoosh(t0 + 3.65, 0.3, 3000, 500, 0.06)
 
-    # question
+    # the closing question
     for k in range(len(tl.INTRO_Q)):
         s_key(tl.Q_LINE1_T + k / tl.Q_LINE1_CPS, 0.1)
-    scale = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84, 86, 88, 91, 93]
+    for i in range(7):
+        s_blip(tl.Q_FORMS_T + i * tl.Q_FORM_STEP, [60, 64, 67, 72, 76, 79, 84][i], 0.08, 0.12, 0.25,
+               pan=-0.6 + 0.2 * i)
+    scale = [72, 74, 76, 79, 81, 84, 86, 88, 91, 93, 96, 98, 100, 103, 105]
     for i in range(len(tl.SKILLS)):
-        s_blip(tl.Q_ICONS_T + i * tl.Q_ICON_STEP, scale[i], 0.07, 0.09, 0.25, pan=-0.7 + 1.4 * i / 14)
-    last = tl.Q_ICONS_T + 15 * tl.Q_ICON_STEP + 0.1
-    for m in (72, 76, 79, 84):
-        s_blip(last, m, 0.05, 0.4, 0.25)
+        s_blip(tl.Q_ICONS_T + i * tl.Q_ICON_STEP, scale[i], 0.045, 0.05, 0.125, pan=-0.6 + 1.2 * i / 14)
     for k in range(len(tl.Q_LINE2)):
         s_key(tl.Q_LINE2_T + k / tl.Q_LINE2_CPS, 0.08, pan=0.1)
 
-    # Yunagi
+    # the evening calm: Lotus AI Lab on Yunagi.Cloud
     brush = bp(white(0.5), 1200, 0.8) * np.sin(np.linspace(0, math.pi, int(0.5 * SR)))
     sfx.add(48.45, brush, 0.07, -0.2)
     for k in range(12):
         s_click(48.8 + k / 30, 0.03)
     for i, tt in enumerate(tl.CARD_TIMES):
-        s_chime(tt, [79, 84, 88][i], 0.07)
-        s_whoosh(tt, 0.25, 1500, 4000, 0.03)
+        s_chime(tt, [79, 84, 88][i], 0.08)
+        for k in range(5):
+            s_blip(tt + 0.05 + k * 0.035, 91 + k * 2, 0.025, 0.04, 0.125, pan=0.3)
     for i in range(6):
         s_blip(tl.MAP_T + 0.4 + i * 0.12, 96, 0.04, 0.03, 0.5, pan=-0.6 + 0.24 * i)
     s_chime(tl.END_T0, 84, 0.08)

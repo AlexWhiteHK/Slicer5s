@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 import gfx
-from gfx import W, H, hexc, seg, ease_out, ease_io, clamp01
+from gfx import W, H, hexc, seg, ease_out, ease_io
 import pixfont as pf
 import timeline as tl
 
@@ -51,18 +51,12 @@ _rng = np.random.default_rng(7)
 _SNOW = np.stack([_rng.uniform(0, W, 260), _rng.uniform(0, H, 260),
                   _rng.uniform(8, 30, 260), _rng.uniform(0, 6.28, 260),
                   _rng.integers(0, 3, 260)], axis=1)
-_STARS = np.stack([_rng.uniform(0, W, 200), _rng.uniform(0, H, 200),
-                   _rng.uniform(0, 6.28, 200), _rng.uniform(1, 4, 200),
-                   _rng.uniform(-6, 6, 200)], axis=1)
 _PAPER_NOISE = _rng.random((H, W))
 _DOTGRID = np.zeros((H, W), bool)
 _DOTGRID[::6, ::6] = True
 
 FLAKE5 = np.array([[c == '#' for c in r] for r in
                    ['#.#.#', '.###.', '#####', '.###.', '#.#.#']], dtype=bool)
-FLAKE7 = np.array([[c == '#' for c in r] for r in
-                   ['...#...', '.#.#.#.', '..###..', '#######', '..###..', '.#.#.#.', '...#...']],
-                  dtype=bool)
 
 
 def bg_term(c, P, t):
@@ -89,59 +83,6 @@ def draw_snow(c, P, t, alpha=1.0, big=True):
             c.pset(x + 1, y, P['sub'], alpha * 0.6)
         elif big:
             c.put_mask(FLAKE5, x - 2, y - 2, P['acc2'], alpha * 0.9)
-
-
-def bg_winter(c, P, t):
-    c.vgrad([hexc('#040818'), hexc('#0a1636'), hexc('#162a5a')])
-    for (cx, cy, r) in ((40, 30, 26), (455, 250, 30), (470, 20, 18), (20, 240, 16)):
-        _flake(c, cx, cy, r, P['faint'], rot=t * 0.1)
-    draw_snow(c, P, t)
-
-
-def bg_crt(c, P, t, grid=False):
-    c.a[:] = P['bg']
-    band = (t * 80) % (H + 60) - 30
-    ys = np.arange(H)
-    m = np.abs(ys - band) < 18
-    c.a[m] = gfx.mix(P['bg'], P['faint'], 0.45)
-    if grid:
-        c.a[::16, :][:, ::2] = P['faint']
-        c.a[:, ::16][::2, :] = P['faint']
-    c.a[_PAPER_NOISE < 0.02] = P['faint']
-
-
-def bg_neon(c, P, t):
-    c.vgrad([hexc('#05041a'), hexc('#0c0930'), hexc('#1a1250')])
-    for (x0, y0, ph, sp, dr) in _STARS:
-        tw = 0.5 + 0.5 * math.sin(t * sp + ph)
-        x = (x0 + dr * t) % W
-        col = P['acc'] if ph > 5 else P['sub']
-        c.pset(x, y0, col, 0.25 + 0.6 * tw)
-
-
-def bg_synth(c, P, t):
-    c.vgrad([hexc('#10031a'), hexc('#1f0828'), hexc('#3a0d34'), hexc('#4a1236')])
-    for (x0, y0, ph, sp, dr) in _STARS[:120]:
-        tw = 0.5 + 0.5 * math.sin(t * sp + ph)
-        x = (x0 + dr * t * 1.5) % W
-        y = (y0 - 4 * t) % H
-        col = P['acc'] if ph > 4 else P['dim']
-        c.pset(x, y, col, 0.2 + 0.5 * tw)
-
-
-def _flake(c, cx, cy, r, color, rot=0.0, alpha=1.0, t=1.0):
-    for k in range(6):
-        a = rot + k * math.pi / 3
-        ex, ey = cx + r * math.cos(a) * t, cy + r * math.sin(a) * t
-        c.line(cx, cy, ex, ey, color, alpha)
-        for f, L in ((0.38, 0.36), (0.62, 0.30), (0.84, 0.18)):
-            if t < f:
-                continue
-            bx, by = cx + r * f * math.cos(a), cy + r * f * math.sin(a)
-            for s in (-1, 1):
-                b = a + s * math.pi / 3
-                ll = r * L * min(1, (t - f) / 0.15)
-                c.line(bx, by, bx + ll * math.cos(b), by + ll * math.sin(b), color, alpha)
 
 
 # ------------------------------------------------------------------ icons (9x9)
@@ -323,7 +264,7 @@ def draw_header(c, P, t, alpha=1.0):
 
 
 # ------------------------------------------------------------------ year odometer
-YEAR_X, YEAR_Y, YEAR_S = 16, 206, 6
+YEAR_X, YEAR_Y, YEAR_S = 16, 211, 6
 YEAR_EVENTS = tl.year_events()
 
 
@@ -387,11 +328,10 @@ def draw_year(c, P, t, era, alpha=1.0, v=None):
 
 # ------------------------------------------------------------------ text log
 TXT_X = 16
-TITLE_Y, SUB_Y0, SUB_DY = 170, 182, 10
+TITLE_Y, SUB_Y0, SUB_DY = 176, 188, 10
 
 
 def draw_textlog(c, P, t, scenes_in_era, alpha=1.0):
-    idx = [i for i, s in enumerate(tl.SCENES)]
     for i, s in enumerate(tl.SCENES):
         if s not in scenes_in_era:
             continue
@@ -400,8 +340,8 @@ def draw_textlog(c, P, t, scenes_in_era, alpha=1.0):
         nxt = tl.SCENES[i + 1]['t0'] if i + 1 < len(tl.SCENES) else tl.QUESTION_T0
         if t > nxt + 0.35:
             continue
-        out = seg(t, nxt, nxt + 0.3)
-        dy = -int(round(26 * ease_out(out)))
+        out = seg(t, nxt, nxt + 0.2)
+        dy = -int(round(8 * ease_out(out)))
         a = alpha * (1 - out)
         if a <= 0:
             continue
@@ -419,3 +359,60 @@ def draw_textlog(c, P, t, scenes_in_era, alpha=1.0):
             else:
                 c.text(s['sub'][li - 1], TXT_X, base + 12 + (li - 1) * SUB_DY + dy,
                        P['sub'], n=k, alpha=a)
+
+
+# ------------------------------------------------------------------ RPG panel
+PANEL_Y = 168
+
+
+def draw_panel(c, P, era, alpha=1.0):
+    dark = era not in ('paper', 'clean')
+    base = gfx.mix(P['bg'], P['panel'], 0.7) if dark else P['panel']
+    c.rect(0, PANEL_Y, W, H - PANEL_Y, base, alpha)
+    c.rect(0, PANEL_Y, W, 1, P['dim'], alpha)
+    c.rect(0, PANEL_Y + 2, W, 1, P['faint'] if dark else P['bg'], alpha)
+    c.rect(248, PANEL_Y + 6, 1, H - PANEL_Y - 12, P['faint'] if dark else P['dim'], alpha)
+    c.tiny('FLOOR', 154 + 6, 213, P['dim'], alpha)
+
+
+def draw_stats(c, P, t, era, alpha=1.0):
+    import dungeon as D
+    if t < tl.BIRTH_T:
+        return
+    a = alpha * seg(t, tl.BIRTH_T, tl.BIRTH_T + 0.3)
+    lv = tl.level(t)
+    form = tl.form(t)
+    x0 = 257
+    c.text('AI', x0, 174, P['ink'], bold=True, alpha=a)
+    c.text('LV %d' % lv, x0 + 16, 174, P['acc'], bold=True, alpha=a)
+    c.text(form, 466, 174, P['sub'], align='right', alpha=a)
+    # HP
+    hp = D.hp(t)
+    c.tiny('HP', x0, 187, P['sub'], a)
+    c.rect(x0 + 12, 187, 197, 5, P['faint'], a)
+    hcol = hexc('#e0503d') if hp < 0.3 else (P['ink'] if era in ('paper', 'amber', 'green', 'winter') else hexc('#3dd68c'))
+    c.rect(x0 + 12, 187, int(197 * hp), 5, hcol, a)
+    # XP: fills towards the next win
+    ws = tl.wins()
+    prev = max([w for w in ws if w <= t] + [tl.BIRTH_T])
+    nxt = min([w for w in ws if w > t] + [60.0])
+    xp = seg(t, prev + 0.35, nxt)
+    c.tiny('XP', x0, 196, P['sub'], a)
+    c.rect(x0 + 12, 196, 197, 5, P['faint'], a)
+    c.rect(x0 + 12, 196, int(197 * xp), 5, P['acc'], a)
+    flash = seg(t, prev, prev + 0.35)
+    if 0 < flash < 1:
+        c.rect(x0 + 12, 196, 197, 5, P['hot'], a * (1 - flash))
+    # evolution pips
+    c.tiny('EVOLUTION', x0, 206, P['sub'], a)
+    k = FORMS_ORDER.index(form)
+    for i in range(len(FORMS_ORDER)):
+        px = x0 + 44 + i * 9
+        if i <= k:
+            c.rect(px, 206, 6, 5, P['acc'] if i == k else P['ink'], a)
+        else:
+            c.frame(px, 206, 6, 5, P['dim'], a)
+
+
+FORMS_ORDER = ['SPARK', 'PERCEPTRON', 'NEURAL KNIGHT', 'DEEP SEER', 'TRANSFORMER DRAKE',
+               'FOUNDATION TITAN', 'AGENT']

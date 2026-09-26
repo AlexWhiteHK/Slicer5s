@@ -19,6 +19,8 @@ BAYER = np.tile(BAYER8, (H // 8 + 2, W // 8 + 2))[:H, :W]
 
 def hexc(s):
     s = s.lstrip('#')
+    if len(s) == 3:
+        s = ''.join(ch * 2 for ch in s)
     return np.array([int(s[i:i + 2], 16) for i in (0, 2, 4)], dtype=np.float32)
 
 
