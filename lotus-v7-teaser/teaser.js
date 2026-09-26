@@ -971,7 +971,7 @@ function drawFX(t) {
 /* ───────── grain ───────── */
 { const c = cnv(256, 256), x = c.getContext('2d'), d = x.createImageData(256, 256), r = rng(7);
   for (let i = 0; i < 256 * 256; i++) { const v = clamp(128 + gauss(r) * 24, 0, 255); d.data[4 * i] = d.data[4 * i + 1] = d.data[4 * i + 2] = v; d.data[4 * i + 3] = 255; }
-  x.putImageData(d, 0, 0); document.getElementById('grain').style.backgroundImage = `url(${c.toDataURL()})`; }
+  x.putImageData(d, 0, 0); const ge = document.getElementById('grain'); ge.style.backgroundImage = `url(${c.toDataURL()})`; if (Q.has('grain')) ge.style.opacity = Q.get('grain'); }
 
 /* ───────── frame ───────── */
 makeTileSnap();
