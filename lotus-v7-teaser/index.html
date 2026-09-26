@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lotus V7 Teaser</title>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<style>
+:root{
+  --paper:#f7f6f2; --ink:#1f1f1f; --ink-2:#5f6368; --ink-3:#9aa0a6; --line:rgba(31,31,31,.12);
+  --shu:#d4553f; --shu-soft:#fbe4de; --blue:#4c8df6; --amber:#f2a93b; --green:#3fae6a; --pink:#f28b82;
+  --chip:#f1f3f4;
+  --shadow-1:0 1px 2px rgba(60,64,67,.10),0 2px 8px rgba(60,64,67,.08);
+  --shadow-2:0 1px 3px rgba(60,64,67,.12),0 10px 32px rgba(60,64,67,.12);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0f0f10;color:var(--ink)}
+body.render{background:var(--paper);overflow:hidden}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;background:var(--paper);transform-origin:0 0;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}
+#stage>canvas{position:absolute;left:0;top:0}
+#bg{width:1920px;height:1080px}
+#ui{position:absolute;inset:0}
+#grain{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.55}
+.abs{position:absolute;left:0;top:0}
+.hid{display:none!important}
+.gs{font-family:'Google Sans Flex','Noto Sans SC',sans-serif}
+.serif{font-family:'Source Serif 4',serif;font-style:italic}
+.roman{font-family:'Source Serif 4',serif;font-style:normal}
+.mono{font-family:'Google Sans Code',monospace}
+.u{display:inline-block;white-space:pre}
+.row{white-space:nowrap}
+
+/* captions */
+.cap{position:absolute;left:0;top:0}
+.cap .zh{font-family:'Google Sans Flex','Noto Sans SC',sans-serif;font-weight:500;color:var(--ink);letter-spacing:.01em}
+.cap .en{font-family:'Source Serif 4',serif;font-style:italic;font-weight:300;color:var(--ink-2);letter-spacing:.003em}
+
+/* prompt pill */
+.pill{width:760px;height:72px}
+.pill-bg{position:absolute;left:0;top:0;width:100%;height:100%;border-radius:36px;background:#fff}
+.pill-shine{position:absolute;left:0;top:0;width:100%;height:72px;border-radius:36px;overflow:hidden;pointer-events:none}
+.pill-shine i{position:absolute;top:0;left:0;width:260px;height:100%;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(242,139,130,.20),rgba(138,180,248,.22),rgba(255,255,255,0))}
+.spark{position:absolute;left:24px;top:23px;width:26px;height:26px}
+.ptext{position:absolute;left:66px;top:0;height:72px;line-height:72px;font-size:26px;color:var(--ink);white-space:pre;letter-spacing:-.003em}
+.ptext .pw{background-repeat:no-repeat;background-position:0 92%;background-size:100% 0%;border-radius:3px}
+.caret{display:inline-block;width:2px;height:28px;background:var(--shu);vertical-align:middle;margin-left:3px;margin-top:-4px}
+.send{position:absolute;right:12px;top:12px;width:48px;height:48px;border-radius:50%;background:#1f1f1f;overflow:hidden}
+.send svg{position:absolute;left:12px;top:12px}
+.ripple{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;background:rgba(255,255,255,.45)}
+.chipx{position:absolute;left:0;top:0;height:38px;line-height:38px;padding:0 16px;border-radius:19px;background:var(--chip);color:var(--ink-2);font-size:18px;white-space:nowrap}
+.chipx.neg{background:#fbe9e6;color:#b1352a}
+.chipx.spill{background:#fff;box-shadow:0 1px 2px rgba(60,64,67,.12),0 4px 14px rgba(60,64,67,.14)}
+.chipx.spill.neg{background:#fdf1ee}
+
+/* year odometer */
+.odo{display:flex;font-family:'Google Sans Flex',sans-serif;font-weight:400;letter-spacing:0;color:var(--ink)}
+.odo .d{overflow:hidden;position:relative}
+.odo .d .s{position:absolute;left:0;top:0;width:100%}
+.odo .d .s span{display:block;text-align:center}
+
+.tag{display:flex;align-items:center;gap:12px;font-size:17px;color:var(--ink-2);letter-spacing:.02em;white-space:nowrap}
+.tag i{width:10px;height:10px;border-radius:50%;display:block}
+
+/* timeline */
+.tl-base{position:absolute;height:2px;background:rgba(31,31,31,.10);border-radius:1px}
+.tl-prog{position:absolute;height:2px;background:var(--shu);border-radius:1px;transform-origin:0 50%}
+.tl-dash{position:absolute;height:2px;background-image:linear-gradient(90deg,rgba(212,85,63,.55) 50%,transparent 50%);background-size:10px 2px}
+.tl-tick{position:absolute;width:8px;height:8px;margin:-3px 0 0 -4px;border-radius:50%;background:#c9ccd1}
+.tl-lab{position:absolute;font-size:15px;color:var(--ink-3);transform:translateX(-50%);white-space:nowrap}
+.tl-mark{position:absolute;width:16px;height:16px;margin:-7px 0 0 -8px;border-radius:50%;background:var(--shu);box-shadow:0 0 0 6px rgba(212,85,63,.16)}
+.tl-v7{position:absolute;font-size:16px;font-weight:600;color:var(--shu);white-space:nowrap;transform:translateX(-50%)}
+
+/* generic chips */
+.chip{position:absolute;display:flex;align-items:center;gap:10px;height:44px;padding:0 18px;border-radius:22px;background:#fff;box-shadow:var(--shadow-1);font-size:18px;color:var(--ink);white-space:nowrap}
+.chip i{width:9px;height:9px;border-radius:50%;display:block;flex:none}
+.chip.glass{background:rgba(255,255,255,.82);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.chip.mono{font-size:16px;letter-spacing:.02em}
+.lbl{position:absolute;font-size:15px;color:var(--ink-3);white-space:nowrap;letter-spacing:.02em}
+.eq{position:absolute;font-size:25px;color:var(--ink-2);white-space:nowrap}
+.eq sub{font-size:.62em}
+.eq .bar{text-decoration:overline}
+
+svg.full{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:visible}
+
+/* vectors */
+.vec{position:absolute;display:flex;align-items:center;gap:14px}
+.vec b{font-weight:400;font-size:16px;color:var(--ink-2);width:120px;text-align:right}
+.vec .cells{display:flex;gap:4px}
+.vec .cells i{width:22px;height:22px;border-radius:5px;display:block}
+
+.tok{position:absolute;height:34px;line-height:34px;padding:0 12px;border-radius:10px;background:#fde7e3;color:#b1352a;font-size:15px;white-space:nowrap}
+
+/* title */
+.wordmark{font-family:'Google Sans Flex',sans-serif;font-weight:500;letter-spacing:-.035em;color:var(--ink);white-space:nowrap}
+.v7{background:linear-gradient(100deg,#d4553f 10%,#f28b82 60%,#8ab4f8 120%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.soon{display:flex;align-items:center;gap:14px;height:52px;padding:0 26px;border-radius:26px;background:var(--shu-soft);color:#b1352a;font-size:22px;white-space:nowrap}
+.soon i{width:8px;height:8px;border-radius:50%;background:var(--shu)}
+
+.panel{position:absolute;background:#fff;border-radius:32px;box-shadow:var(--shadow-2)}
+.loupe{position:absolute;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;border:2px solid rgba(255,255,255,.95);box-shadow:0 2px 10px rgba(0,0,0,.18),inset 0 0 0 12px rgba(255,255,255,.12)}
+.loupe-l{position:absolute;height:40px;line-height:40px;padding:0 16px;border-radius:20px;background:rgba(255,255,255,.9);font-size:17px;color:var(--ink);white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+
+.header{display:flex;align-items:center;gap:14px;white-space:nowrap}
+.seal{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:9px;background:#b1352a;color:#f7f6f2;font:500 20px/1 'Noto Sans SC',sans-serif}
+
+/* player (non-render) */
+#player{position:fixed;left:0;right:0;bottom:0;padding:14px 20px 18px;background:linear-gradient(180deg,rgba(15,15,16,0),rgba(15,15,16,.92) 40%);color:#e8eaed;font:14px/1.4 'Google Sans Flex',sans-serif;display:flex;flex-direction:column;gap:10px;transition:opacity .3s}
+#player.hide{opacity:0}
+#player .bar{position:relative;height:6px;border-radius:3px;background:rgba(255,255,255,.18);cursor:pointer}
+#player .bar b{position:absolute;left:0;top:0;height:100%;border-radius:3px;background:#f28b82}
+#player .bar s{position:absolute;top:-3px;width:2px;height:12px;background:rgba(255,255,255,.55)}
+#player .ctl{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#player button{background:rgba(255,255,255,.1);border:0;color:inherit;font:inherit;padding:7px 14px;border-radius:18px;cursor:pointer}
+#player button:hover{background:rgba(255,255,255,.2)}
+#player button.on{background:#f28b82;color:#1f1f1f}
+#player .time{font-variant-numeric:tabular-nums;opacity:.8;min-width:96px}
+#loading{position:fixed;inset:0;display:grid;place-items:center;color:#9aa0a6;font:15px 'Google Sans Flex',sans-serif}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="bg" width="960" height="540"></canvas>
+  <canvas id="fx" width="1920" height="1080"></canvas>
+  <div id="ui"></div>
+  <canvas id="fx2" width="1920" height="1080"></canvas>
+  <div id="grain"></div>
+</div>
+<div id="loading">Loading…</div>
+<script src="teaser.js"></script>
+</body>
+</html>
