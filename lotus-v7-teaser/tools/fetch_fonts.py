@@ -11,16 +11,15 @@ OUT = ROOT / 'assets' / 'fonts'
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36'
 
 src = (ROOT / 'teaser.js').read_text('utf-8') + (ROOT / 'index.html').read_text('utf-8')
-chars = set(src) | set(chr(c) for c in range(0x20, 0x7F)) | set('蓮·—–’“”…×≈→←↑√−αεᾱ⁸⁹¹⁰₀')
+chars = set(src) | set(chr(c) for c in range(0x20, 0x7F)) | set('·—–’‘“”…×→←↑·')
 chars.discard('\n'); chars.discard('\r'); chars.discard('\t')
-cjk = {c for c in chars if ord(c) >= 0x2E80}
 latin = {c for c in chars if ord(c) < 0x2E80}
 
 FAMILIES = [
-    ('Google Sans Flex', 'Google+Sans+Flex:wght@300..700', ''.join(sorted(latin))),
-    ('Noto Sans SC', 'Noto+Sans+SC:wght@400;500', ''.join(sorted(cjk | set('·，。：、？！「」（）')))),
-    ('Source Serif 4', 'Source+Serif+4:ital,wght@0,400;1,300;1,400', ''.join(sorted(latin))),
-    ('Google Sans Code', 'Google+Sans+Code:wght@400;500', ''.join(sorted(latin))),
+    ('Cormorant Garamond', 'Cormorant+Garamond:ital,wght@0,500;0,600;1,500', ''.join(sorted(latin))),
+    ('Cinzel', 'Cinzel:wght@500;600', ''.join(sorted(latin))),
+    ('Instrument Sans', 'Instrument+Sans:wght@400;500;600', ''.join(sorted(latin))),
+    ('IBM Plex Mono', 'IBM+Plex+Mono:wght@400', ''.join(sorted(latin))),
 ]
 
 def get(url):
@@ -42,4 +41,4 @@ for name, spec, text in FAMILIES:
         css_out.append(f"@font-face{{font-family:'{name}';font-style:{style};font-weight:{weight};font-display:block;src:url({fname}) format('woff2')}}")
         print(name, style, weight, fname, (OUT / fname).stat().st_size)
 (OUT / 'fonts.css').write_text('\n'.join(css_out) + '\n', 'utf-8')
-print(len(cjk), 'CJK glyphs,', len(latin), 'latin glyphs')
+print(len(latin), 'glyphs')
