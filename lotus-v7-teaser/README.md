@@ -2,7 +2,7 @@
 
 Lotus AI Lab（Higan Holdings Limited 旗下）V7 系列更新的 2 分钟预告。全英文画面，用一个比喻讲完文生图模型的原理，最后落到 **Lotus Realistic V7** 与 **Lotus Anime Diffusion V7**。
 
-- 成片：`dist/lotus-v7-teaser.mp4`（1920×1080，60 fps，H.264 + AAC，内嵌 7 个章节）
+- 成片：`dist/lotus-v7-teaser.mp4`（1920×1080，60 fps，H.264 两遍编码约 5.5 Mbps + AAC，86 MB，内嵌 7 个章节）
 - 交互版：`index.html`（同一套时间轴，可暂停、拖动、按章节跳转）
 - 配乐：原创，`tools/compose_music.py` 用 numpy 逐音合成
 
