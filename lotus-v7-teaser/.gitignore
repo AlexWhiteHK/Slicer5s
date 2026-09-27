@@ -1,0 +1,4 @@
+dist/*
+!dist/lotus-v7-teaser.mp4
+!dist/music.wav
+__pycache__/

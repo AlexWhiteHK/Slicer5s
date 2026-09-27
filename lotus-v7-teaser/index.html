@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lotus V7 Teaser</title>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<style>
+:root{
+  --ivory:#f3eee4; --bone:#e8e0d1; --stone:#cfc5b4; --ink:#1e1c19; --ink-2:#5a5249; --ink-3:#8f8577;
+  --clay:#c4633f; --brass:#b08d57; --walnut:#3a2a1f;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0e0c0a;color:var(--ink)}
+body.render{background:#000;overflow:hidden}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;background:#17130f;transform-origin:0 0;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}
+#stage>canvas{position:absolute;left:0;top:0}
+#world{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-style:preserve-3d;perspective-origin:960px 540px}
+.plane{position:absolute;left:0;top:0;transform-origin:0 0;backface-visibility:hidden}
+.hid{display:none!important}
+.serif{font-family:'Cormorant Garamond',serif}
+.sans{font-family:'Instrument Sans',sans-serif}
+.mono{font-family:'IBM Plex Mono',monospace}
+.cinzel{font-family:'Cinzel',serif}
+.u{display:inline-block;white-space:pre}
+.row{white-space:nowrap}
+
+/* gallery frames */
+.frame{background:linear-gradient(135deg,#4a3526,#2b1e15 55%,#433023);padding:34px;box-shadow:0 30px 60px rgba(40,28,18,.28),0 6px 14px rgba(40,28,18,.22)}
+.frame .mat{background:#f4efe6;padding:46px;box-shadow:inset 0 2px 6px rgba(0,0,0,.18)}
+.frame .mat canvas{display:block;box-shadow:0 0 0 2px #c9ad7a}
+.brass{background:linear-gradient(160deg,#d3b47e,#a8854c 45%,#c7a570 70%,#96763f);color:#3b2c16;display:flex;flex-direction:column;justify-content:center;padding:0 26px;box-shadow:0 3px 8px rgba(40,28,18,.25)}
+.brass b{font:600 22px/1.2 'Instrument Sans',sans-serif;letter-spacing:.16em}
+.brass span{font:500 19px/1.3 'Cormorant Garamond',serif;font-style:italic;letter-spacing:.01em}
+.inscr{display:flex;flex-direction:column;align-items:center;justify-content:center}
+.inscr .t{font:600 176px/1 'Cinzel',serif;letter-spacing:.24em;padding-left:.24em;color:#9d9180;text-shadow:-2px -2px 1px rgba(70,56,40,.55),2px 2px 1px rgba(255,255,255,.75)}
+.inscr .m{font:500 50px/1 'Cinzel',serif;letter-spacing:.16em;padding-left:.16em;color:#9d9180;margin-top:30px;text-shadow:-1px -1px 1px rgba(70,56,40,.5),1px 1px 1px rgba(255,255,255,.7)}
+.inscr .s{font:600 38px/1 'Instrument Sans',sans-serif;letter-spacing:.6em;padding-left:.6em;color:#b86a4c;margin-top:34px;text-shadow:-1px -1px 0 rgba(90,50,30,.35),1px 1px 0 rgba(255,255,255,.6)}
+
+/* supers */
+.sup{position:absolute;left:120px;width:1200px}
+.sup .lab{font:600 15px/1 'Instrument Sans',sans-serif;letter-spacing:.24em;text-transform:uppercase;color:var(--clay);display:flex;align-items:center;gap:16px}
+.sup .lab i{display:block;height:1px;width:44px;background:currentColor}
+.sup .ln{font:500 54px/1.14 'Cormorant Garamond',serif;letter-spacing:-.005em;margin-top:18px}
+.end{position:absolute;left:0;width:1920px;text-align:center}
+#vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 75% 70% at 50% 48%,rgba(0,0,0,0) 55%,rgba(28,20,12,.30) 100%)}
+#grain{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.18}
+
+/* player (non-render) */
+#player{position:fixed;left:0;right:0;bottom:0;padding:14px 20px 18px;background:linear-gradient(180deg,rgba(14,12,10,0),rgba(14,12,10,.92) 40%);color:#ece6db;font:14px/1.4 'Instrument Sans',sans-serif;display:flex;flex-direction:column;gap:10px;transition:opacity .3s}
+#player.hide{opacity:0}
+#player .bar{position:relative;height:5px;border-radius:3px;background:rgba(255,255,255,.18);cursor:pointer}
+#player .bar b{position:absolute;left:0;top:0;height:100%;border-radius:3px;background:var(--clay)}
+#player .bar s{position:absolute;top:-3px;width:2px;height:11px;background:rgba(255,255,255,.55)}
+#player .ctl{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#player button{background:rgba(255,255,255,.1);border:0;color:inherit;font:inherit;padding:7px 14px;border-radius:16px;cursor:pointer}
+#player button:hover{background:rgba(255,255,255,.2)}
+#player button.on{background:var(--clay);color:#fff}
+#player .time{font-variant-numeric:tabular-nums;opacity:.8;min-width:96px}
+#loading{position:fixed;inset:0;display:grid;place-items:center;color:#8f8577;font:15px 'Instrument Sans',sans-serif}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="bg" width="1920" height="1080"></canvas>
+  <div id="world"></div>
+  <canvas id="fx" width="1920" height="1080"></canvas>
+  <div id="vig"></div>
+  <div id="ui"></div>
+  <div id="grain"></div>
+</div>
+<div id="loading">Loading…</div>
+<script src="teaser.js"></script>
+</body>
+</html>
